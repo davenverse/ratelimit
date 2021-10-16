@@ -48,7 +48,7 @@ object SlidingWindowRateLimiter {
     }
 
     def createRateLimit(pi: PeriodInfo, k: K, lastPeriodCount: Long, currentCount: Long, whether: Option[RateLimiter.WhetherToRateLimit]): RateLimiter.RateLimit = {
-      val reset = RateLimiter.RateLimitReset(pi.secondsLeftInPeriod)
+      val reset = RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
       val l = limit(k)
 
       val percent = (pi.secondsLeftInPeriod.toDouble / periodSeconds.toDouble)
