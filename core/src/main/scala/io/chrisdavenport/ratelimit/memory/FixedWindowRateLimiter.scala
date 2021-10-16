@@ -79,25 +79,23 @@ object FixedWindowRateLimiter {
   }
 
   private[ratelimit] def fromFiniteDuration(fd: FiniteDuration): Long =
-    fd.toMillis
+    fd.toSeconds
 
   private[ratelimit] case class PeriodInfo(periodNumber: Long, secondsLeftInPeriod: Long)
 
-  private[ratelimit] def getPeriodInfo(millisSinceEpoch: Long, periodSeconds: Long): PeriodInfo = {
-    val period = determinePeriod(millisSinceEpoch, periodSeconds)
-    val secondsLeft = secondsLeftInPeriod(millisSinceEpoch, periodSeconds, period)
+  private[ratelimit] def getPeriodInfo(secondsSinceEpoch: Long, periodSeconds: Long): PeriodInfo = {
+    val period = determinePeriod(secondsSinceEpoch, periodSeconds)
+    val secondsLeft = secondsLeftInPeriod(secondsSinceEpoch, periodSeconds, period)
     val pi = PeriodInfo(period, secondsLeft)
     pi
   }
 
-  private[ratelimit] def determinePeriod(millisSinceEpoch: Long, periodSeconds: Long): Long = {
-    val periodMillis = periodSeconds * 1000
-    millisSinceEpoch / periodMillis
+  private[ratelimit] def determinePeriod(secondsSinceEpoch: Long, periodSeconds: Long): Long = {
+    secondsSinceEpoch / periodSeconds
   }
 
-  private[ratelimit] def secondsLeftInPeriod(millisSinceEpoch: Long, periodSeconds: Long, periodNumber: Long): Long = {
-    val currentSeconds = millisSinceEpoch / 1000
+  private[ratelimit] def secondsLeftInPeriod(secondsSinceEpoch: Long, periodSeconds: Long, periodNumber: Long): Long = {
     val periodEndSeconds = (periodNumber + 1)  * periodSeconds
-    periodEndSeconds - currentSeconds
+    periodEndSeconds - secondsSinceEpoch
   }
 }
