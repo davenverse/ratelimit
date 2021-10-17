@@ -12,7 +12,6 @@ import Window._
 
 object FixedWindowRateLimiter {
 
-
   def build[F[_]: Temporal, K](maxRate: K => Long, periodSeconds: Long): Resource[F, RateLimiter[F, K]] = for {
     ref <- Resource.eval(Ref.of(Map.empty[(K, Long), Long])) 
     mapRef = MapRef.defaultedMapRef(
@@ -21,7 +20,6 @@ object FixedWindowRateLimiter {
     )
     _ <- clearNonPeriodKeys(periodSeconds, ref).background
   } yield new FixedWindow(maxRate, periodSeconds, mapRef).mapK(kleisliToTemporal[F])
-
 
   private[ratelimit] def clearNonPeriodKeys[F[_]: Temporal, K](periodSeconds: Long, ref: Ref[F, Map[(K, Long), Long]]): F[Unit] = 
     Temporal[F].realTime.flatMap{fd => 

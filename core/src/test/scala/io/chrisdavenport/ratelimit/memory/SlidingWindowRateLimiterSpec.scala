@@ -37,7 +37,6 @@ class SlidingWindowRateLimiterSpec extends CatsEffectSuite {
       rl5 <- rl.getAndDecrement("foo").run(5.seconds)
       rl6 <- rl.getAndDecrement("foo").run(5.seconds)
     } yield {
-      // println((rl1, rl2, rl3))
       assertEquals(rl1.remaining.remaining, 2L)
       assertEquals(rl2.remaining.remaining, 1L)
       assertEquals(rl2.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
