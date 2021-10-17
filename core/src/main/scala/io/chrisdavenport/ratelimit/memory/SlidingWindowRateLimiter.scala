@@ -60,12 +60,12 @@ object SlidingWindowRateLimiter {
           if (newFromLastPeriod < fromLastPeriod) {
             RateLimiter.RateLimitReset(nextSecond.toLong)
           } else if (nextSecond + pi.secondsLeftInPeriod >= periodSeconds){
-            RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
+            RateLimiter.RateLimitReset(pi.secondsLeftInPeriod)
           } else daysTillNewPermitsFromLast(nextSecond + 1)
         }
         daysTillNewPermitsFromLast(1)
       } else {
-        RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
+        RateLimiter.RateLimitReset(pi.secondsLeftInPeriod)
       }
 
       RateLimiter.RateLimit(
