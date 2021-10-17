@@ -2,7 +2,6 @@ package io.chrisdavenport.ratelimit
 
 import munit.CatsEffectSuite
 import cats.effect._
-import io.chrisdavenport.ratelimit.RateLimiter
 // import scala.concurrent.duration._
 // import io.chrisdavenport.mapref.MapRef
 import org.http4s.dsl.io._
@@ -26,7 +25,7 @@ class RateLimiterMiddlwareSpec extends CatsEffectSuite {
         Ok()
       case _ => Forbidden()
     }.orNotFound
-    FixedWindowRateLimiter.build[IO, IpAddress](Function.const(5), 60).use(rl => 
+    FixedWindowRateLimiter.build[IO,Option[SocketAddress[IpAddress]]](Function.const(5), 60).use(rl => 
       RateLimiter.Middleware.byIp(rl)(app).run(
         Request(Method.GET, uri"http://foo.bar/foo")
           .withAttribute(Request.Keys.ConnectionInfo, connection)
@@ -56,9 +55,9 @@ class RateLimiterMiddlwareSpec extends CatsEffectSuite {
         Ok()
       case _ => Forbidden()
     }.orNotFound
-    FixedWindowRateLimiter.build[IO, IpAddress](Function.const(2), 60).use(rl => 
-      rl.getAndDecrement(remoteIp) >> 
-      rl.getAndDecrement(remoteIp) >>
+    FixedWindowRateLimiter.build[IO, Option[SocketAddress[IpAddress]]](Function.const(2), 60).use(rl => 
+      rl.getAndDecrement(connection.remote.some) >> 
+      rl.getAndDecrement(connection.remote.some) >>
       RateLimiter.Middleware.byIp(rl)(app).run(
         Request(Method.GET, uri"http://foo.bar/foo")
           .withAttribute(Request.Keys.ConnectionInfo, connection)

@@ -9,10 +9,9 @@ ThisBuild / testFrameworks += new TestFramework("munit.Framework")
 
 val catsV = "2.6.1"
 val catsEffectV = "3.2.9"
-val fs2V = "3.1.2"
-val http4sV = "0.23.2"
+val fs2V = "3.1.5"
+val http4sV = "0.23.6"
 val circeV = "0.14.1"
-val doobieV = "1.0.0-RC1"
 val munitCatsEffectV = "1.0.5"
 
 
@@ -29,18 +28,17 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     name := "ratelimit",
 
     libraryDependencies ++= Seq(
-      "org.typelevel"               %% "cats-core"                  % catsV,
-      "org.typelevel"               %% "cats-effect"                % catsEffectV,
+      "org.typelevel"               %%% "cats-core"                  % catsV,
+      "org.typelevel"               %%% "cats-effect"                % catsEffectV,
 
-      "io.chrisdavenport"           %% "mapref"                     % "0.2.1",
+      "io.chrisdavenport"           %%% "mapref"                     % "0.2.1",
 
-      "co.fs2"                      %% "fs2-core"                   % fs2V,
-      "co.fs2"                      %% "fs2-io"                     % fs2V,
+      "co.fs2"                      %%% "fs2-core"                   % fs2V,
+      "co.fs2"                      %%% "fs2-io"                     % fs2V,
 
-      "org.http4s"                  %% "http4s-core"                 % http4sV,
+      "org.http4s"                  %%% "http4s-core"                 % http4sV,
 
-      "org.http4s"                  %% "http4s-dsl"                  % http4sV % Test,
-
+      "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
       "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
 
     )
