@@ -49,13 +49,13 @@ object SlidingWindowRateLimiter {
 
     def createRateLimit(pi: PeriodInfo, k: K, lastPeriodCount: Long, currentCount: Long): RateLimiter.RateLimit = {
       val l = limit(k)
-      val percent = (pi.secondsLeftInPeriod.toDouble / periodSeconds.toDouble)
+      val percent = ((pi.secondsLeftInPeriod - 1).toDouble / periodSeconds.toDouble)
       val fromLastPeriod = Math.floor(percent * lastPeriodCount).toLong
       val remain = l.limit - fromLastPeriod - currentCount
       val remaining = RateLimiter.RateLimitRemaining(Math.max(remain, 0))
       val reset = if (remain <= 0 && fromLastPeriod > 0) {
         def daysTillNewPermitsFromLast(nextSecond: Int): RateLimiter.RateLimitReset = {
-          val percent = ((pi.secondsLeftInPeriod.toDouble - nextSecond) / periodSeconds.toDouble)
+          val percent = (((pi.secondsLeftInPeriod - 1).toDouble - nextSecond) / periodSeconds.toDouble)
           val newFromLastPeriod = Math.floor(percent * lastPeriodCount).toLong
           if (newFromLastPeriod < fromLastPeriod) {
             RateLimiter.RateLimitReset(nextSecond.toLong)

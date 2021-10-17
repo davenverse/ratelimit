@@ -36,18 +36,21 @@ class SlidingWindowRateLimiterSpec extends CatsEffectSuite {
       rl4 <- rl.get("foo").run(4.seconds)
       rl5 <- rl.getAndDecrement("foo").run(5.seconds)
       rl6 <- rl.getAndDecrement("foo").run(5.seconds)
+      rl7 <- rl.getAndDecrement("foo").run(5.seconds)
     } yield {
       assertEquals(rl1.remaining.remaining, 2L)
       assertEquals(rl2.remaining.remaining, 1L)
       assertEquals(rl2.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
       assertEquals(rl3.remaining.remaining, 0L)
       assertEquals(rl3.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
-      assertEquals(rl4.remaining.remaining, 0L)
+      assertEquals(rl4.remaining.remaining, 1L)
       assertEquals(rl4.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
-      assertEquals(rl5.remaining.remaining, 0L)
+      assertEquals(rl5.remaining.remaining, 1L)
       assertEquals(rl5.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
       assertEquals(rl6.remaining.remaining, 0L)
-      assertEquals(rl6.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldRateLimit)
+      assertEquals(rl6.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
+      assertEquals(rl7.remaining.remaining, 0L)
+      assertEquals(rl7.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldRateLimit)
     }
   }
 
@@ -59,7 +62,7 @@ class SlidingWindowRateLimiterSpec extends CatsEffectSuite {
     for {
       rl2 <- rl.getAndDecrement("foo").run(0.seconds)
       rl3 <- rl.getAndDecrement("foo").run(0.seconds)
-      rl4 <- rl.getAndDecrement("foo").run(90.seconds) 
+      rl4 <- rl.getAndDecrement("foo").run(89.seconds) 
     } yield {
       assertEquals(rl2.remaining.remaining, 1L)
       assertEquals(rl2.whetherToRateLimit, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit)
