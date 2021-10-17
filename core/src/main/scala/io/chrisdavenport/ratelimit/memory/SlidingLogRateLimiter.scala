@@ -32,7 +32,7 @@ object SlidingLogRateLimiter {
       RateLimiter.RateLimitLimit(max, Some(RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil)))
     }
 
-    def createRateLimit(id: K, currentSeconds: Long, currentCount: Int, oldestTime: Option[Long], shouldRateLimit: Option[RateLimiter.WhetherToRateLimit]): RateLimiter.RateLimit ={
+    def createRateLimit(id: K, currentSeconds: Long, currentCount: Int, oldestTime: Option[Long]): RateLimiter.RateLimit ={
         val l = limit(id)
         val remain = l.limit - currentCount
         val reset = RateLimiter.RateLimitReset(
@@ -40,7 +40,7 @@ object SlidingLogRateLimiter {
         )
         val remaining = RateLimiter.RateLimitRemaining(Math.max(remain, 0))
         val rl = RateLimiter.RateLimit(
-          shouldRateLimit.getOrElse(if (remain < 0) RateLimiter.WhetherToRateLimit.ShouldRateLimit else RateLimiter.WhetherToRateLimit.ShouldNotRateLimit),
+          if (remain < 0) RateLimiter.WhetherToRateLimit.ShouldRateLimit else RateLimiter.WhetherToRateLimit.ShouldNotRateLimit,
           l,
           remaining,
           reset
@@ -56,7 +56,7 @@ object SlidingLogRateLimiter {
         val x = ((modified, fixed), (fixed.size, oldest))
         x
       }.map{ case (count, oldest) => 
-        createRateLimit(id, seconds, count, oldest, Some(RateLimiter.WhetherToRateLimit.ShouldNotRateLimit))
+        createRateLimit(id, seconds, count, oldest)
       }
     }
 
@@ -71,7 +71,7 @@ object SlidingLogRateLimiter {
         val x = ((seconds, out), (out.size, oldest))
         x
       }.map{ case (count, oldest) => 
-        createRateLimit(id, seconds, count, oldest, None)
+        createRateLimit(id, seconds, count, oldest)
       }
     }
     def rateLimit(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = getAndDecrement(id).flatMap{

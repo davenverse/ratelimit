@@ -47,7 +47,7 @@ object SlidingWindowRateLimiter {
       RateLimiter.RateLimitLimit(max, Some(RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil)))
     }
 
-    def createRateLimit(pi: PeriodInfo, k: K, lastPeriodCount: Long, currentCount: Long, whether: Option[RateLimiter.WhetherToRateLimit]): RateLimiter.RateLimit = {
+    def createRateLimit(pi: PeriodInfo, k: K, lastPeriodCount: Long, currentCount: Long): RateLimiter.RateLimit = {
       val reset = RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
       val l = limit(k)
 
@@ -61,7 +61,7 @@ object SlidingWindowRateLimiter {
 
       val remaining = RateLimiter.RateLimitRemaining(Math.max(remain, 0))
       RateLimiter.RateLimit(
-        whether.getOrElse(if (remain < 0) RateLimiter.WhetherToRateLimit.ShouldRateLimit else RateLimiter.WhetherToRateLimit.ShouldNotRateLimit),
+        if (remain < 0) RateLimiter.WhetherToRateLimit.ShouldRateLimit else RateLimiter.WhetherToRateLimit.ShouldNotRateLimit,
         l,
         remaining,
         reset
@@ -73,7 +73,7 @@ object SlidingWindowRateLimiter {
     def get(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = Kleisli{fd => 
       val pi = periodInfo(fd)
       (mapRef((id, pi.periodNumber - 1L)).get, mapRef((id, pi.periodNumber)).get)
-        .mapN(createRateLimit(pi, id, _, _, RateLimiter.WhetherToRateLimit.ShouldNotRateLimit.some))
+        .mapN(createRateLimit(pi, id, _, _))
     }
     
     def getAndDecrement(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = Kleisli{fd =>
@@ -81,7 +81,7 @@ object SlidingWindowRateLimiter {
       (
         mapRef((id, pi.periodNumber - 1L)).get,
         mapRef((id, pi.periodNumber)).modify(l => (l+1, l+1))
-      ).mapN(createRateLimit(pi, id, _, _, None))
+      ).mapN(createRateLimit(pi, id, _, _))
     }
     
     def rateLimit(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = getAndDecrement(id).flatMap{
