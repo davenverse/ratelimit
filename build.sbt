@@ -64,7 +64,7 @@ lazy val rediculous = crossProject(JVMPlatform, JSPlatform)
 
 lazy val examples = project.in(file("examples"))
   .disablePlugins(MimaPlugin)
-  .dependsOn(core.jvm)
+  .dependsOn(core.jvm, rediculous.jvm)
 
 
 lazy val site = project.in(file("site"))

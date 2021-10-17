@@ -20,8 +20,9 @@ object RedisRateLimiter {
     periodSeconds: Long,
     namespace: String = "rediculous-rate-limiter",
     useRedisTime: Boolean = false,
+    redisSupportsExpireNX: Boolean = false ,
   ): RateLimiter[F, String] = 
-    new SlidingWindow[F](connection, maxRate, periodSeconds, namespace).mapK{
+    new SlidingWindow[F](connection, maxRate, periodSeconds, namespace, redisSupportsExpireNX).mapK{
       if (useRedisTime) redisTime(connection) else temporalTime
     }
 
@@ -30,6 +31,8 @@ object RedisRateLimiter {
     maxRate: String => Long,
     periodSeconds: Long,
     namespace : String,
+    // As of Redis 7.0 the new expire supports nx which is much more space efficient
+    redisSupportsExpireNX: Boolean = false ,
   ) extends RateLimiter[Kleisli[F, FiniteDuration, *], String]{
 
     val comment = RateLimiter.QuotaComment("comment", Either.right("sliding window"))
@@ -87,10 +90,13 @@ object RedisRateLimiter {
       val periodEndSeconds = (periodNumber + 1)  * periodSeconds
       val secondsLeftInPeriod = periodEndSeconds - secondsSinceEpoch
       val key = s"$namespace$id$periodNumber"
+      val expireCommand = if (redisSupportsExpireNX) {
+        io.chrisdavenport.rediculous.RedisCtx[RedisPipeline].keyed[Int](key, NonEmptyList.of("EXPIRE", key, (secondsLeftInPeriod + 1).toString(), "NX"))
+      } else RedisCommands.expire[RedisPipeline](key, secondsLeftInPeriod + 1)
       (
         RedisCommands.get[RedisPipeline](s"$namespace$id${periodNumber - 1}").map(_.map(_.toLong).getOrElse(0L)),
         RedisCommands.incr[RedisPipeline](key),
-        io.chrisdavenport.rediculous.RedisCtx[RedisPipeline].keyed[Int](key, NonEmptyList.of("EXPIRE", key, (secondsLeftInPeriod + 1).toString(), "NX"))
+        expireCommand
       ).mapN{ case(last, current, _) =>
         createRateLimit(secondsLeftInPeriod, id, last, current)
       }.pipeline.run(connection)
@@ -110,8 +116,9 @@ object RedisRateLimiter {
     periodSeconds: Long,
     namespace: String = "rediculous-rate-limiter",
     useRedisTime: Boolean = false,
+    redisSupportsExpireNX: Boolean = false,
   ): RateLimiter[F, String] = 
-    new FixedWindow[F](connection, maxRate, periodSeconds, namespace).mapK{
+    new FixedWindow[F](connection, maxRate, periodSeconds, namespace, redisSupportsExpireNX).mapK{
       if (useRedisTime) redisTime(connection) else temporalTime
     }
 
@@ -120,6 +127,7 @@ object RedisRateLimiter {
     maxRate: String => Long,
     periodSeconds: Long,
     namespace : String,
+    redisSupportsExpireNX: Boolean,
   ) extends RateLimiter[Kleisli[F, FiniteDuration, *], String]{
 
     val comment = RateLimiter.QuotaComment("comment", Either.right("fixed window"))
@@ -157,9 +165,12 @@ object RedisRateLimiter {
       val periodEndSeconds = (periodNumber + 1)  * periodSeconds
       val secondsLeftInPeriod = periodEndSeconds - secondsSinceEpoch
       val key = s"$namespace$id$periodNumber"
+      val expireCommand = if (redisSupportsExpireNX) {
+        io.chrisdavenport.rediculous.RedisCtx[RedisPipeline].keyed[Int](key, NonEmptyList.of("EXPIRE", key, (secondsLeftInPeriod + 1).toString(), "NX"))
+      } else RedisCommands.expire[RedisPipeline](key, secondsLeftInPeriod + 1)
       val pipeline = (
         RedisCommands.incr[RedisPipeline](key),
-        io.chrisdavenport.rediculous.RedisCtx[RedisPipeline].keyed[Int](key, NonEmptyList.of("EXPIRE", key, (secondsLeftInPeriod + 1).toString(), "NX"))
+        expireCommand
       ).mapN{ case(count, _) => count}
       pipeline.pipeline[F].run(connection).map(
         createRateLimit(secondsLeftInPeriod, id, _)
