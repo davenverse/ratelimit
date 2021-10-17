@@ -25,7 +25,7 @@ class SlidingLogRateLimiterSpec extends CatsEffectSuite {
   // }
 
   test("State should reset automatically") {
-    val mapref = MapRef.defaultedMapRef(MapRef.inSingleImmutableMap[SyncIO, IO, String, (Long, List[Long])](Map()).unsafeRunSync(), (0L, List.empty))
+    val mapref = MapRef.defaultedMapRef(MapRef.inSingleImmutableMap[SyncIO, IO, String, (Long, Option[Long], List[Long])](Map()).unsafeRunSync(), (0L, None, List.empty))
     val rl = new SlidingLogRateLimiter.SlidingLog(Function.const(1), 2, Int.MaxValue, mapref)
       for {
         rl1 <- rl.get("foo").run(0.seconds) // Does not modify so does not count against it

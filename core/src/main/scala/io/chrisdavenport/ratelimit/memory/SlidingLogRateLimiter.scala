@@ -11,10 +11,10 @@ import io.chrisdavenport.mapref.MapRef
 object SlidingLogRateLimiter {
 
   def of[F[_]: Temporal, K](maxRate: K => Long, periodSeconds: Long, maxSize: Int = Int.MaxValue): F[RateLimiter[F, K]] = for {
-    ref <- MapRef.ofSingleImmutableMap[F, K, (Long, List[Long])](Map.empty)
-    mapRef = MapRef.defaultedMapRef[F, K, (Long, List[Long])](
+    ref <- MapRef.ofSingleImmutableMap[F, K, (Long, Option[Long], List[Long])](Map.empty)
+    mapRef = MapRef.defaultedMapRef[F, K, (Long, Option[Long], List[Long])](
       ref,
-      (0, List.empty[Long])
+      (0, None, List.empty[Long])
     )
   } yield new SlidingLog(maxRate, periodSeconds, maxSize, mapRef).mapK(kleisliToTemporal[F])
 
@@ -24,7 +24,7 @@ object SlidingLogRateLimiter {
     }
 
   // Assumes Time in Seconds Always is positive - Probably a very dangerous assumption (think a binary tree could do this as well without the assumption)
-  private[ratelimit] class SlidingLog[F[_]: MonadThrow, K](maxRate: K => Long, periodSeconds: Long, maxSize: Int, mapRef: MapRef[F, K, (Long, List[Long])]) extends RateLimiter[Kleisli[F, FiniteDuration, *], K]{
+  private[ratelimit] class SlidingLog[F[_]: MonadThrow, K](maxRate: K => Long, periodSeconds: Long, maxSize: Int, mapRef: MapRef[F, K, (Long, Option[Long], List[Long])]) extends RateLimiter[Kleisli[F, FiniteDuration, *], K]{
 
     val comment = RateLimiter.QuotaComment("comment", Either.right("sliding log"))
     def limit(k: K) = {
@@ -50,10 +50,10 @@ object SlidingLogRateLimiter {
     def get(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = Kleisli{ fd => 
       val seconds = fd.toSeconds
       val tooOld = seconds - periodSeconds
-      mapRef(id).modify{ case (modified, l) => 
+      mapRef(id).modify{ case (modified, old, l) => 
         val fixed = if (modified != seconds) l.takeWhile(_ >= tooOld) else l
-        val oldest = fixed.lastOption
-        val x = ((modified, fixed), (fixed.size, oldest))
+        val oldest: Option[Long] = if (modified != seconds) fixed.lastOption else old
+        val x = ((modified, oldest, fixed), (fixed.size, oldest))
         x
       }.map{ case (count, oldest) => 
         createRateLimit(id, seconds, count, oldest)
@@ -63,12 +63,12 @@ object SlidingLogRateLimiter {
     def getAndDecrement(id: K): Kleisli[F,FiniteDuration,RateLimiter.RateLimit] = Kleisli{ fd =>
       val seconds = fd.toSeconds
       val tooOld = seconds - periodSeconds
-      mapRef(id).modify{ case (modified, l) => 
+      mapRef(id).modify{ case (modified, old, l) => 
         val fixed = if (modified != seconds) l.takeWhile(_ >= tooOld) else l
-        val oldest = fixed.lastOption
+        val oldest: Option[Long] = if (modified != seconds) fixed.lastOption else old
         val size = fixed.size
         val out = if (size < maxSize) seconds :: fixed else fixed
-        val x = ((seconds, out), (out.size, oldest))
+        val x = ((seconds, oldest, out), (out.size, oldest))
         x
       }.map{ case (count, oldest) => 
         createRateLimit(id, seconds, count, oldest)
