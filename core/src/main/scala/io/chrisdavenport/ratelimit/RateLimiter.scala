@@ -21,7 +21,7 @@ object RateLimiter {
   case class QuotaPolicy(limit: Long, timeWindowSeconds: Long, comments: List[QuotaComment])
   case class RateLimitLimit(limit: Long, policy: Option[QuotaPolicy])
   case class RateLimitRemaining(remaining: Long)
-  case class RateLimitReset(timeLeftInWindowSeconds: Long)
+  case class RateLimitReset(resetInSeconds: Long)
 
   sealed trait WhetherToRateLimit
   object WhetherToRateLimit {

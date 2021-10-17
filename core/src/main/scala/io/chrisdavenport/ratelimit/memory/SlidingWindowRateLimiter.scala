@@ -48,18 +48,26 @@ object SlidingWindowRateLimiter {
     }
 
     def createRateLimit(pi: PeriodInfo, k: K, lastPeriodCount: Long, currentCount: Long): RateLimiter.RateLimit = {
-      val reset = RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
       val l = limit(k)
-
       val percent = (pi.secondsLeftInPeriod.toDouble / periodSeconds.toDouble)
       val fromLastPeriod = Math.floor(percent * lastPeriodCount).toLong
       val remain = l.limit - fromLastPeriod - currentCount
-
-      // TODO reset should likely be the next period at which the change of fromLastPeriod changes total
-      // count if remain is currently 0. Otherwise those that respect this window will miss out on
-      // available permits.
-
       val remaining = RateLimiter.RateLimitRemaining(Math.max(remain, 0))
+      val reset = if (remain <= 0 && fromLastPeriod > 0) {
+        def daysTillNewPermitsFromLast(nextSecond: Int): RateLimiter.RateLimitReset = {
+          val percent = ((pi.secondsLeftInPeriod.toDouble - nextSecond) / periodSeconds.toDouble)
+          val newFromLastPeriod = Math.floor(percent * lastPeriodCount).toLong
+          if (newFromLastPeriod < fromLastPeriod) {
+            RateLimiter.RateLimitReset(nextSecond.toLong)
+          } else if (nextSecond + pi.secondsLeftInPeriod >= periodSeconds){
+            RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
+          } else daysTillNewPermitsFromLast(nextSecond + 1)
+        }
+        daysTillNewPermitsFromLast(1)
+      } else {
+        RateLimiter.RateLimitReset(pi.secondsLeftInPeriod + periodSeconds)
+      }
+
       RateLimiter.RateLimit(
         if (remain < 0) RateLimiter.WhetherToRateLimit.ShouldRateLimit else RateLimiter.WhetherToRateLimit.ShouldNotRateLimit,
         l,
