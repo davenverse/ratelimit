@@ -19,7 +19,7 @@ val munitCatsEffectV = "1.0.5"
 lazy val `ratelimit` = project.in(file("."))
   .disablePlugins(MimaPlugin)
   .enablePlugins(NoPublishPlugin)
-  .aggregate(core.jvm, core.js, examples)
+  .aggregate(core.jvm, core.js, rediculous.jvm, rediculous.js, examples)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
@@ -45,6 +45,22 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   ).jsSettings(
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule)},
   )
+
+lazy val rediculous = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .dependsOn(core)
+  .in(file("rediculous"))
+  .settings(
+    name := "ratelimit-rediculous",
+    libraryDependencies ++= Seq(
+      "io.chrisdavenport"           %%% "rediculous"                  % "0.1.1",
+      "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
+      "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
+    )
+  ).jsSettings(
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule)},
+  )
+
 
 lazy val examples = project.in(file("examples"))
   .disablePlugins(MimaPlugin)
