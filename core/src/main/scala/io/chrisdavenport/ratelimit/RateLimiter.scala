@@ -3,7 +3,7 @@ package io.chrisdavenport.ratelimit
 import cats._
 import cats.syntax.all._
 import cats.data.Kleisli
-import com.comcast.ip4s.IpAddress
+import com.comcast.ip4s.{SocketAddress, IpAddress}
 
 trait RateLimiter[F[_], K]{
   def get(id: K): F[RateLimiter.RateLimit]
@@ -67,25 +67,24 @@ object RateLimiter {
   object Middleware {
     import org.http4s._
     import cats.data.OptionT
-    def byIp[F[_]: MonadThrow, G[_]](rateLimiter: RateLimiter[F, IpAddress])(http: Http[F, G]): Http[F, G] = Kleisli{
+    def byRequest[F[_]: MonadThrow, G[_], K](rateLimiter: RateLimiter[F, K], f: Request[G] => K)(http: Http[F, G]): Http[F, G] = Kleisli{
       (req: Request[G]) => 
-        val address = req.remoteAddr
-        address match{
-          case Some(ip) =>
-            rateLimiter.rateLimit(ip).redeemWith(
-              {
-                case e: RateLimiter.RateLimited => 
-                  Response[G](Status.TooManyRequests)
-                    .putHeaders(e.info.limit, e.info.remaining, e.info.reset).pure[F]
-                case e => MonadThrow[F].raiseError[Response[G]](e)
-              },
-              {(result: RateLimiter.RateLimit) =>
-                http.run(req).map(resp => resp.putHeaders(result.limit, result.remaining, result.reset))
-              }
-            )
-          case None => http.run(req)
-        }
+        rateLimiter.rateLimit(f(req)).redeemWith(
+          {
+            case e: RateLimiter.RateLimited => 
+              Response[G](Status.TooManyRequests)
+                .putHeaders(e.info.limit, e.info.remaining, e.info.reset).pure[F]
+            case e => MonadThrow[F].raiseError[Response[G]](e)
+          },
+          {(result: RateLimiter.RateLimit) =>
+            http.run(req).map(resp => resp.putHeaders(result.limit, result.remaining, result.reset))
+          }
+        )
     }
+
+    // TODO: IF this should always be here can we default this somehow?
+    def byIp[F[_]: MonadThrow, G[_]](rateLimiter: RateLimiter[F, Option[SocketAddress[IpAddress]]])(http: Http[F, G]): Http[F, G] = 
+      byRequest[F, G, Option[SocketAddress[IpAddress]]](rateLimiter, _.remote)(http)
 
     def byContext[F[_]: MonadThrow, K](rateLimiter: RateLimiter[F, K], http: ContextRoutes[K, F]): ContextRoutes[K, F] = 
       Kleisli{
