@@ -137,10 +137,10 @@ object RateLimiter {
 
   // This has no stack trace. This should be fast and immediately logged or handled.
   // You Are free to use a different throwable, and provide
-  trait RateLimited extends RuntimeException {
+  abstract class RateLimited(description: String) extends RuntimeException(description){
     def info: RateLimit
   }
-  case class FastRateLimited[K](key: K, info: RateLimit) extends Throwable(s"RateLimiter with key $key failed") with scala.util.control.NoStackTrace
+  case class FastRateLimited[K](key: K, info: RateLimit) extends RateLimited(s"RateLimiter with key $key failed") with scala.util.control.NoStackTrace
 
 
   private class ContravariantRateLimiter[F[_], K, I](r: RateLimiter[F, K], f: I => K) extends RateLimiter[F, I]{

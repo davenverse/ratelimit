@@ -39,6 +39,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 
       "org.http4s"                  %% "http4s-core"                 % http4sV,
 
+      "org.http4s"                  %% "http4s-dsl"                  % http4sV % Test,
+
       "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
 
     )
