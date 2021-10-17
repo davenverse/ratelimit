@@ -42,7 +42,7 @@ object FixedWindowRateLimiter {
     val comment = RateLimiter.QuotaComment("comment", Either.right("fixed window"))
     def limit(k: K) = {
       val max = maxRate(k)
-      RateLimiter.RateLimitLimit(max, Some(RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil)))
+      RateLimiter.RateLimitLimit(max, RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil) :: Nil)
     }
 
     def createRateLimit(pi: PeriodInfo, k: K, currentCount: Long): RateLimiter.RateLimit = {

@@ -29,7 +29,7 @@ object SlidingLogRateLimiter {
     val comment = RateLimiter.QuotaComment("comment", Either.right("sliding log"))
     def limit(k: K) = {
       val max = maxRate(k)
-      RateLimiter.RateLimitLimit(max, Some(RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil)))
+      RateLimiter.RateLimitLimit(max, RateLimiter.QuotaPolicy(max, periodSeconds, comment :: Nil) :: Nil)
     }
 
     def createRateLimit(id: K, currentSeconds: Long, currentCount: Int, oldestTime: Option[Long]): RateLimiter.RateLimit ={
