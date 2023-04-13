@@ -53,7 +53,7 @@ lazy val rediculous = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "ratelimit-rediculous",
     libraryDependencies ++= Seq(
-      "io.chrisdavenport"           %%% "rediculous"                  % "0.1.1",
+      "io.chrisdavenport"           %%% "rediculous"                  % "0.5.0",
       "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
       "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
     )
