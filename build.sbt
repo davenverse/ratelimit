@@ -13,7 +13,7 @@ ThisBuild / developers := List(
 ThisBuild / tlCiReleaseBranches := Seq()
 
 val Scala213tl = "2.13.18"
-ThisBuild / crossScalaVersions := Seq("2.12.20",  Scala213tl)
+ThisBuild / crossScalaVersions := Seq(Scala213tl)
 ThisBuild / scalaVersion := Scala213tl
 
 // Compiler settings DavenversePlugin injected globally. sbt-typelevel-ci-release
@@ -34,17 +34,17 @@ ThisBuild / scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) m
 })
 
 
-val Scala213 = "2.13.6"
+val Scala213 = "2.13.18"
 
 
 ThisBuild / testFrameworks += new TestFramework("munit.Framework")
 
-val catsV = "2.6.1"
-val catsEffectV = "3.2.9"
-val fs2V = "3.1.5"
-val http4sV = "0.23.6"
+val catsV = "2.13.0"
+val catsEffectV = "3.7.1"
+val fs2V = "3.14.0"
+val http4sV = "0.23.37"
 val circeV = "0.14.1"
-val munitCatsEffectV = "1.0.5"
+val munitCatsEffectV = "2.2.1"
 
 
 // Projects
@@ -70,7 +70,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.http4s"                  %%% "http4s-core"                 % http4sV,
 
       "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
-      "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
+      "org.typelevel"               %%% "munit-cats-effect"        % munitCatsEffectV         % Test,
 
     )
   ).jsSettings(
@@ -86,7 +86,7 @@ lazy val rediculous = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Seq(
       "io.chrisdavenport"           %%% "rediculous"                  % "0.1.1",
       "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
-      "org.typelevel"               %%% "munit-cats-effect-3"        % munitCatsEffectV         % Test,
+      "org.typelevel"               %%% "munit-cats-effect"        % munitCatsEffectV         % Test,
     )
   ).jsSettings(
     scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule)},
