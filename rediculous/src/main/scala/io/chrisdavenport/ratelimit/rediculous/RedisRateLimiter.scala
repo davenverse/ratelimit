@@ -4,6 +4,9 @@ import cats._
 import cats.syntax.all._
 import io.chrisdavenport.rediculous._
 import io.chrisdavenport.rediculous.RedisCommands.{zremrangebyscore, zadd, zcard, zrange, pexpire, ZAddOpts}
+// RedisCtx is ByteVector-first now; keyed/unkeyed are the String-oriented
+// syntax rather than members of the trait.
+import io.chrisdavenport.rediculous.RedisCtx.syntax.all._
 import cats.effect._
 import io.chrisdavenport.rediculous.RedisTransaction.TxResult.{Aborted, Success, Error}
 import cats.Applicative

@@ -62,7 +62,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.typelevel"               %%% "cats-core"                  % catsV,
       "org.typelevel"               %%% "cats-effect"                % catsEffectV,
 
-      "io.chrisdavenport"           %%% "mapref"                     % "0.2.1",
+      "io.chrisdavenport"           %%% "mapref"                     % "0.4.0",
 
       "co.fs2"                      %%% "fs2-core"                   % fs2V,
       "co.fs2"                      %%% "fs2-io"                     % fs2V,
@@ -84,7 +84,7 @@ lazy val rediculous = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "ratelimit-rediculous",
     libraryDependencies ++= Seq(
-      "io.chrisdavenport"           %%% "rediculous"                  % "0.1.1",
+      "io.chrisdavenport"           %%% "rediculous"                  % "0.6.0",
       "org.http4s"                  %%% "http4s-dsl"                  % http4sV % Test,
       "org.typelevel"               %%% "munit-cats-effect"        % munitCatsEffectV         % Test,
     )
